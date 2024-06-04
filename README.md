@@ -6,8 +6,17 @@ This repository contains code for training a ResNet18 model on a specified datas
 
 The data directory structure should look like this:
 
-![image](https://github.com/TienDoan274/Resnet18_training/assets/125201131/3d17e5d7-6be4-4615-9022-46cb2ecacbb6)
-
+```
+.
+└── data/
+    ├── test/
+    ├── train/
+    └── val
+        ├── image1.jpg
+        ├── image2.jpg
+        ├── image3.jpg
+        ├── ...
+```
 
 ## Installation
 ```
