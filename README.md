@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ## Usage
 ```
-cd .\Resnet18_training\Resnet18_ginorchvisionModels\
+cd .\Resnet18_training\Resnet18_torchvisionModels\
 ```
 ### Training
 Training the ResNet18 model from torchvisions library with CLI command:
