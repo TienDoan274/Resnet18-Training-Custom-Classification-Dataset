@@ -1,6 +1,6 @@
 # ResNet18 Training 
 
-This repository contains code for training a ResNet18 model on a specified dataset.
+This repository contains code for training a ResNet18 model on a custom classification dataset.
 
 ## Data Directory Structure
 
