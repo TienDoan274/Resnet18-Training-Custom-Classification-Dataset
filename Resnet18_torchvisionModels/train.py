@@ -14,11 +14,11 @@ def get_args():
     parser = argparse.ArgumentParser(description='train_resnet18_from_torchvision_models')
     parser.add_argument('--data_path',type=str,default='G:/My Drive/Data/vehicledataset/data')
     parser.add_argument('--learning_rate','-lr',type=int,default=1e-2)
-    parser.add_argument('--checkpoint_path','-ckp',type=str,default=None)
+    parser.add_argument('--checkpoint_path','-ckp',type=str,default=None)#'D:/DAI HOC/NAM 2/Kì 2/Nhập môn CV/DoAN/saved_models/last.pt')
     parser.add_argument('--tensorboard_path',type=str,default='Tensorboard')
     parser.add_argument('--batch_size',type=int,default=8)
     parser.add_argument('--save_path',type=str,default='saved_models')
-    parser.add_argument('--epochs',type=int,default=50)
+    parser.add_argument('--epochs',type=int,default=10)
     parser.add_argument('--pretrained',type=bool,default=True)
     parser.add_argument('--freeze_layers',type=int,default=40)
 
@@ -34,10 +34,9 @@ def main(args):
             shutil.rmtree(args.tensorboard_path)
         os.makedirs(args.tensorboard_path)
     writer = SummaryWriter(args.tensorboard_path)
-    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
-    
+    batch_size = args.batch_size
     # Model 
     num_classes = 5
     if args.pretrained == True:
@@ -63,33 +62,31 @@ def main(args):
                     ])
 
     # optimizer, loss function and epochs
-    optimizer = torch.optim.Adam(model.parameters(),lr=0.0003)
+    optimizer = torch.optim.Adam(model.parameters(),lr=args.learning_rate)
     loss_fn = nn.CrossEntropyLoss()
     epochs = args.epochs
     if args.checkpoint_path and os.path.isfile(args.checkpoint_path):
-            ckp = torch.load(args.checkpoint_path)
-            start_epoch = ckp['last_epoch']
-            model.load_state_dict(ckp['model'])
-            optimizer.load_state_dict(ckp['optimizer'])
+        ckp = torch.load(args.checkpoint_path)
+        start_epoch = ckp['last_epoch']
+        model.load_state_dict(ckp['model'])
+        optimizer.load_state_dict(ckp['optimizer'])
     else:
         start_epoch = 0
-
     # Data
     train_data = CustomData(data_dir=os.path.join(args.data_path,'train'),transform=transform)
     val_data = CustomData(data_dir=os.path.join(args.data_path,'val'),transform=transform)
     train_loader = DataLoader(
-        dataset=train_data,
-        batch_size= 8,
-        shuffle=True,
+        dataset= train_data,
+        batch_size= batch_size,
+        shuffle= True,
         )
     val_loader = DataLoader(
-        dataset=val_data,
-        batch_size=8,
+        dataset= val_data,
+        batch_size= batch_size,
     )
-    
     # Training
-    min_loss = 999
-    for epoch in range(epochs):
+    min_loss = 9999
+    for epoch in range(start_epoch,start_epoch + epochs):
         model.train(True)
         progress_bar = tqdm(train_loader, colour="cyan")
         running_loss = total = correct = 0
@@ -99,7 +96,7 @@ def main(args):
             labels = labels.to(device)
             preds = model(images)
             loss = loss_fn(preds,labels)
-            progress_bar.set_description("Epoch {}/{}. Loss {:0.4f}".format(epoch + 1, epochs, loss))
+            progress_bar.set_description("Epoch {}/{}. Loss {:0.4f}".format(epoch + 1, start_epoch + epochs, loss))
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -109,10 +106,13 @@ def main(args):
                 running_loss += loss.item()
                 _, predictions = torch.max(preds, dim=1)
                 correct += (predictions == labels).sum().item()
+        writer.add_scalar("Train/Loss", running_loss/total, epoch)
+        writer.add_scalar("Train/Accuracy", correct/total, epoch)
+
         print('Training Loss', running_loss/total)
         print('Training Accuracy: ',correct/total)
         model.eval()
-        progress_bar = tqdm(val_loader, colour="yellow")
+        progress_bar = tqdm(train_loader, colour="yellow")
         val_loss = correct = total = 0
         for (images,labels) in progress_bar:
             images = images.to(device)
@@ -124,17 +124,22 @@ def main(args):
             loss = loss_fn(preds,labels)
             val_loss = val_loss + loss.item()
             total += labels.size(0)
+        writer.add_scalar("Val/Loss", val_loss/total, epoch)
+        writer.add_scalar("Val/Accuracy", correct/total, epoch)
         print('Val loss:',val_loss/total)
         print('Val Accuracy: ',correct/total)
         checkpoint  = {
                 "model":model.state_dict(),
-                "epoch": epoch+1,
-                "optimizer":optimizer.state_dict()
+                "last_epoch": epoch+1,
+                "optimizer":optimizer.state_dict(),
+                "val_acc":correct/total
             }
+        print(val_loss)
         if(val_loss<min_loss):
+            min_loss = val_loss
             torch.save(checkpoint,os.path.join(args.save_path,'best.pt'))        
-        torch.save(checkpoint,os.path.join(args.save_path,'last.pt'))
-                
-if __name__ == "__main__":
-    args = get_args()
-    main(args)
+        torch.save(checkpoint,os.path.join(args.save_path,'last.pt')) 
+            
+if __name__ == '__main__':
+       args = get_args()
+       main(args)

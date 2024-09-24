@@ -10,9 +10,9 @@ from torch.utils.data import DataLoader
 import argparse
 def get_args():
     parser = argparse.ArgumentParser(description='build_and_train_resnet18')
-    parser.add_argument('--data_path',type=str,default="test_images")
+    parser.add_argument('--data_path',type=str,default="G:/My Drive/Data/vehicledataset/data/val/Bus/000885_17.jpg")
     parser.add_argument('--output_path',type=str,default='')
-    parser.add_argument('--checkpoint_path','-ckp',type=str,default='saved_models/best.pt')
+    parser.add_argument('--checkpoint_path','-ckp',type=str,default='./saved_models/last.pt')
 
     args = parser.parse_args()
     return args
@@ -23,10 +23,12 @@ def main(args):
 
     print(device)
     model = resnet18(weights = ResNet18_Weights.DEFAULT)
-    # ckp = torch.load(args.checkpoint_path)
+    if args.checkpoint_path and os.path.isfile(args.checkpoint_path):
+        ckp = torch.load(args.checkpoint_path)
+        model.load_state_dict(ckp['model'])
+
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features , 5)
-    # model.load_state_dict(ckp['model'])
     model.to(device)
     model.eval()
     transform = Compose([
@@ -44,7 +46,7 @@ def main(args):
                 image = image.to(device)
                 model.eval()
                 with torch.no_grad():
-                    pred = model(image.unsqueeze(0))  # Add batch dimension
+                    pred = model(image.unsqueeze(0))  
                 prediction = int(torch.max(pred, dim=1).indices)
                 f.writelines(f"{prediction}\n")
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ class CustomData(Dataset):
         self.file_paths = []
         self.labels = []
         self.transform = transform
-        for i,cls in enumerate(os.listdir(data_dir)):
+        for i,cls in enumerate(sorted(os.listdir(data_dir))):
             self.dictionary[cls] = i
         for cls in os.listdir(data_dir):
             for filename in os.listdir(os.path.join(data_dir,cls)):
@@ -28,5 +28,5 @@ class CustomData(Dataset):
             
         label = torch.tensor(self.labels[index])
         return image,label
-
+        
 

@@ -16,7 +16,7 @@ def get_args():
     parser.add_argument('--checkpoint_path','-ckp',type=str,default=None)
     parser.add_argument('--tensorboard_path',type=str,default='Tensorboard')
     parser.add_argument('--batch_size',type=int,default=8)
-    parser.add_argument('--save_path',type=str,default='saved_models')
+    parser.add_argument('--save_path',type=str,default='saved_models2')
     parser.add_argument('--epochs',type=int,default=50)
     parser.add_argument('--freeze_layers',type=int,default=40)
 
@@ -24,6 +24,8 @@ def get_args():
     return args
 
 def main(args):
+    
+    # Saved models path and tensorboard 
     os.makedirs(args.save_path,exist_ok=True)
     if args.tensorboard_path :
         if os.path.isdir(args.tensorboard_path):
@@ -33,6 +35,7 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     batch_size = args.batch_size
+    # Model 
     num_classes = 5
     model = ResNet(img_channels=3, num_layers=18, block=BasicBlock, num_classes=num_classes).to(device)
     if args.freeze_layers:
@@ -41,7 +44,8 @@ def main(args):
             param.requires_grad = False
             count = count + 1
             if (count == args.freeze_layers):
-                break    
+                break
+    model = model.to(device)
     print(model)
 
     transform = Compose([
@@ -49,31 +53,31 @@ def main(args):
                     ToTensor(), 
                     Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                     ])
+    # optimizer, loss function and epochs
     optimizer = torch.optim.Adam(model.parameters(),lr=args.learning_rate)
     loss_fn = nn.CrossEntropyLoss()
-    
     epochs = args.epochs
     if args.checkpoint_path and os.path.isfile(args.checkpoint_path):
-            ckp = torch.load(args.checkpoint_path)
-            start_epoch = ckp['last_epoch']
-            model.load_state_dict(ckp['model'])
-            optimizer.load_state_dict(ckp['optimizer'])
+        ckp = torch.load(args.checkpoint_path)
+        start_epoch = ckp['last_epoch']
+        model.load_state_dict(ckp['model'])
+        optimizer.load_state_dict(ckp['optimizer'])
     else:
         start_epoch = 0
-        
+    # Data
     train_data = CustomData(data_dir=os.path.join(args.data_path,'train'),transform=transform)
     val_data = CustomData(data_dir=os.path.join(args.data_path,'val'),transform=transform)
     train_loader = DataLoader(
-        dataset=train_data,
+        dataset= train_data,
         batch_size= batch_size,
-        shuffle=True,
+        shuffle= True,
         )
     val_loader = DataLoader(
-        dataset=val_data,
+        dataset= val_data,
         batch_size= batch_size,
     )
-    
-    min_loss = 999
+    # Training
+    min_loss = 9999
     for epoch in range(start_epoch,start_epoch + epochs):
         model.train(True)
         progress_bar = tqdm(train_loader, colour="cyan")
@@ -112,14 +116,19 @@ def main(args):
             loss = loss_fn(preds,labels)
             val_loss = val_loss + loss.item()
             total += labels.size(0)
+        writer.add_scalar("Val/Loss", val_loss/total, epoch)
+        writer.add_scalar("Val/Accuracy", correct/total, epoch)
         print('Val loss:',val_loss/total)
         print('Val Accuracy: ',correct/total)
         checkpoint  = {
                 "model":model.state_dict(),
                 "last_epoch": epoch+1,
-                "optimizer":optimizer.state_dict()
+                "optimizer":optimizer.state_dict(),
+                "val_acc":correct/total
             }
+        print(val_loss)
         if(val_loss<min_loss):
+            min_loss = val_loss
             torch.save(checkpoint,os.path.join(args.save_path,'best.pt'))        
         torch.save(checkpoint,os.path.join(args.save_path,'last.pt')) 
             
