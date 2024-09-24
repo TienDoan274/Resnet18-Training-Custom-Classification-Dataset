@@ -3,5 +3,4 @@ saved_models2/
 __pycache__/
 *.pyc
 Tensorboard/
-
 desktop.ini

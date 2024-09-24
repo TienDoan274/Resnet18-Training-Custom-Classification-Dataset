@@ -14,7 +14,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='train_resnet18_from_torchvision_models')
     parser.add_argument('--data_path',type=str,default='G:/My Drive/Data/vehicledataset/data')
     parser.add_argument('--learning_rate','-lr',type=int,default=1e-2)
-    parser.add_argument('--checkpoint_path','-ckp',type=str,default=None)#'D:/DAI HOC/NAM 2/Kì 2/Nhập môn CV/DoAN/saved_models/last.pt')
+    parser.add_argument('--checkpoint_path','-ckp',type=str,default=None)
     parser.add_argument('--tensorboard_path',type=str,default='Tensorboard')
     parser.add_argument('--batch_size',type=int,default=8)
     parser.add_argument('--save_path',type=str,default='saved_models')
@@ -134,7 +134,6 @@ def main(args):
                 "optimizer":optimizer.state_dict(),
                 "val_acc":correct/total
             }
-        print(val_loss)
         if(val_loss<min_loss):
             min_loss = val_loss
             torch.save(checkpoint,os.path.join(args.save_path,'best.pt'))        

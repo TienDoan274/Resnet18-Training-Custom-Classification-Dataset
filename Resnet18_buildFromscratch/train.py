@@ -126,7 +126,6 @@ def main(args):
                 "optimizer":optimizer.state_dict(),
                 "val_acc":correct/total
             }
-        print(val_loss)
         if(val_loss<min_loss):
             min_loss = val_loss
             torch.save(checkpoint,os.path.join(args.save_path,'best.pt'))        
