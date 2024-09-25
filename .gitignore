@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 Tensorboard/
 desktop.ini
+Resnet18_torchvisionModels/saved_models/
