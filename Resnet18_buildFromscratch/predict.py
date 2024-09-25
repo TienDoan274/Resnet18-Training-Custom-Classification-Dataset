@@ -1,4 +1,4 @@
-from torchvision.models import resnet18,ResNet18_Weights
+from buildResnet18 import BasicBlock,ResNet
 import torch
 from torch import nn
 from torchvision.transforms import ToTensor,Compose,Normalize,Resize
@@ -17,15 +17,14 @@ def get_args():
     args = parser.parse_args()
     return args
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def main(args):
-
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
-    model = resnet18(weights = ResNet18_Weights.DEFAULT)
-    if args.checkpoint_path and os.path.isfile(args.checkpoint_path):
-        ckp = torch.load(args.checkpoint_path)
-        model.load_state_dict(ckp['model'])
+    num_classes = 5
+    model = ResNet(img_channels=3, num_layers=18, block=BasicBlock, num_classes=num_classes).to(device)    if args.checkpoint_path and os.path.isfile(args.checkpoint_path):
+    ckp = torch.load(args.checkpoint_path)
+    model.load_state_dict(ckp['model'])
 
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features , 5)
