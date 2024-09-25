@@ -14,6 +14,7 @@ def get_args():
     parser.add_argument('--output_path',type=str,default='')
     parser.add_argument('--checkpoint_path','-ckp',type=str,default='./Resnet18_torchvisionModels/saved_models/best.pt')
 
+
     args = parser.parse_args()
     return args
 
@@ -23,12 +24,19 @@ def main(args):
 
     print(device)
     model = resnet18(weights = ResNet18_Weights.DEFAULT)
+<<<<<<< HEAD
     if args.checkpoint_path and os.path.isfile(args.checkpoint_path):
         ckp = torch.load(args.checkpoint_path)
         model.load_state_dict(ckp['model'])
 
     num_features = model.fc.in_features
     model.fc = nn.Linear(num_features , 5)
+=======
+    # ckp = torch.load(args.checkpoint_path)
+    num_features = model.fc.in_features
+    model.fc = nn.Linear(num_features , 5)
+    # model.load_state_dict(ckp['model'])
+>>>>>>> d5ee567f41d87a4bbe242d8ad6ba4c7b84e5ed8c
     model.to(device)
     model.eval()
     transform = Compose([
@@ -46,9 +54,15 @@ def main(args):
                 image = image.to(device)
                 model.eval()
                 with torch.no_grad():
+<<<<<<< HEAD
                     pred = model(image.unsqueeze(0))  
                 prediction = int(torch.max(pred, dim=1).indices)
                 print(prediction)
+=======
+                    pred = model(image.unsqueeze(0))  # Add batch dimension
+                prediction = int(torch.max(pred, dim=1).indices)
+                f.writelines(f"{prediction}\n")
+>>>>>>> d5ee567f41d87a4bbe242d8ad6ba4c7b84e5ed8c
 if __name__ == "__main__":
     args = get_args()
     main(args)
